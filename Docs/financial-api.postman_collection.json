@@ -1,0 +1,97 @@
+{
+  "info": {
+    "_postman_id": "887c63ac-421f-4d98-a4a8-5a4abc4111fd",
+    "name": "Criação de conta",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52516064",
+    "_collection_link": "https://go.postman.co/collection/52516064-887c63ac-421f-4d98-a4a8-5a4abc4111fd?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Criação de conta",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"João Tech\",\r\n  \"email\": \"joao@tech.com\",\r\n  \"password\": \"securepassword\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3333/users",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3333",
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Deposito em conta",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"accountId\": \"71093474-0e67-4d57-a255-33c733b4c672\",\r\n  \"amount\": 1000.50,\r\n  \"description\": \"Salário da Maria\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3333/transactions/deposit",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3333",
+          "path": [
+            "transactions",
+            "deposit"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "transferência",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"senderAccountId\": \"71093474-0e67-4d57-a255-33c733b4c672\",\r\n  \"receiverAccountId\": \"bce11351-a500-4b2f-92e8-c8b586043f48\",\r\n  \"amount\": 500.00,\r\n  \"description\": \"Pagamento do Aluguel\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3333/transactions/transfer",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3333",
+          "path": [
+            "transactions",
+            "transfer"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
