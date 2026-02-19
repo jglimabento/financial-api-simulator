@@ -15,3 +15,8 @@ Um simulador de operações bancárias robusto desenvolvido com tecnologias mode
 O projeto utiliza uma estrutura organizada para facilitar a manutenção e escalabilidade:
 - **Prisma:** Gerenciamento de schema e migrações de dados.
 - **Transactions:** Uso de `$transaction` do Prisma para garantir a atomicidade das operações financeiras (evitando perda de dados em transferências).
+
+
+Você pode encontrar a coleção do Postman para testar as rotas (Criar Usuário, Depósito, Transferência e Extrato) na pasta /Docs.
+
+Desenvolvido por João Guilherme Lima Bento
