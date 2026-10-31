@@ -1,4 +1,4 @@
-import Fastify from 'fastify'
+import 'dotenv/config'\nimport Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { PrismaClient } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
@@ -132,16 +132,16 @@ app.post('/transactions/transfer', async (request, reply) => {
   try {
     const amount = new Decimal(amountNumber)
     const result = await prisma.$transaction(async (tx) => {
-      const sender = await tx.account.findUnique({ where: { id: senderAccountId } })
       const receiver = await tx.account.findUnique({ where: { id: receiverAccountId } })
+      if (!receiver) throw new Error('Receiver account was not found.')
 
-      if (!sender || !receiver) throw new Error('Sender or receiver account was not found.')
-      if (sender.balance.lessThan(amount)) throw new Error('Insufficient funds.')
-
-      await tx.account.update({
-        where: { id: senderAccountId },
+      // Conditional debit keeps the balance check and debit atomic under concurrent requests.
+      const debit = await tx.account.updateMany({
+        where: { id: senderAccountId, balance: { gte: amount } },
         data: { balance: { decrement: amount } },
       })
+      if (debit.count !== 1) throw new Error('Insufficient funds or sender account was not found.')
+
       await tx.account.update({
         where: { id: receiverAccountId },
         data: { balance: { increment: amount } },
@@ -162,8 +162,7 @@ app.post('/transactions/transfer', async (request, reply) => {
   } catch (error) {
     request.log.error(error)
     const message = error instanceof Error ? error.message : 'Unable to process transfer.'
-    const statusCode = message === 'Insufficient funds.' ? 400 : 400
-    return reply.status(statusCode).send({ error: message })
+    return reply.status(400).send({ error: message })
   }
 })
 
