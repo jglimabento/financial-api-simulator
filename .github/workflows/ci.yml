@@ -1,4 +1,4 @@
-name: API Build
+name: API Build and Tests
 
 on:
   push:
@@ -21,6 +21,8 @@ jobs:
         run: npm ci
       - name: Generate Prisma Client
         run: npx prisma generate
+      - name: Run unit tests
+        run: npm test
       - name: Type-check
         run: npm run typecheck
       - name: Build
