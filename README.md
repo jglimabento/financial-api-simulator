@@ -10,6 +10,7 @@ A backend project that simulates basic financial account operations through a RE
 - Transfer funds between accounts
 - Retrieve an account transaction statement
 - Persist related financial operations using Prisma transactions
+- Validate email, amount and transfer-account inputs
 
 ## Technology stack
 
@@ -19,11 +20,13 @@ A backend project that simulates basic financial account operations through a RE
 - PostgreSQL 15
 - Prisma ORM
 - bcryptjs for password hashing
+- Node.js built-in Test Runner for validation unit tests
 
 ## Project structure
 
 ```text
 .
+├── .github/workflows/ci.yml
 ├── Docs/
 │   └── financial-api.postman_collection.json
 ├── prisma/
@@ -31,10 +34,12 @@ A backend project that simulates basic financial account operations through a RE
 │   └── schema.prisma
 ├── src/
 │   ├── routes/
-│   └── server.ts
+│   ├── server.ts
+│   └── validation.ts
+├── tests/
+│   └── validation.test.js
 ├── docker-compose.yml
-├── package.json
-└── tsconfig.json
+└── package.json
 ```
 
 ## Requirements
@@ -65,14 +70,14 @@ A backend project that simulates basic financial account operations through a RE
    CORS_ORIGIN="http://localhost:3000"
    ```
 
-4. Generate the Prisma client and apply migrations:
+4. Generate Prisma Client and apply migrations:
 
    ```bash
    npx prisma generate
    npx prisma migrate deploy
    ```
 
-5. Start the API in development:
+5. Start the API:
 
    ```bash
    npm run dev
@@ -131,17 +136,35 @@ Passwords must contain at least 8 characters. The API stores a bcrypt hash and d
 
 Amounts must be positive. Transfers require two different existing accounts and sufficient funds.
 
-## API exploration
+## Tests and quality checks
+
+Run validation unit tests:
+
+```bash
+npm test
+```
+
+Run the TypeScript check and build:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+The tests cover email format, positive finite amounts and distinct account identifiers. The GitHub Actions workflow runs these checks on pushes and pull requests to `main`.
 
 An existing Postman collection is available at `Docs/financial-api.postman_collection.json`. Update its account IDs with records created in your local environment before running deposit or transfer requests.
 
-## Quality and security notes
+## Security scope
 
-The API includes basic request validation, password hashing, restricted CORS origins and transactional updates for financial operations. This is a learning/portfolio project, not production banking software. It does not currently implement authentication/authorization, rate limiting, idempotency keys, audit-grade ledger controls or comprehensive automated integration tests. Do not use real personal or financial data.
+The API now hashes passwords, omits password hashes from user responses, validates key request inputs, restricts browser origins through `CORS_ORIGIN` and performs transfer debits with a conditional database update inside a transaction.
+
+This is a learning/portfolio project, not production banking software. Authentication/authorization, rate limiting, idempotency keys, audit-grade ledger controls and comprehensive API integration tests are not implemented. Do not use real personal or financial data. The default PostgreSQL credentials in Docker Compose are for local development only.
 
 ## Useful commands
 
 - `npm run dev` — run the TypeScript server in development
+- `npm test` — build and run validation unit tests
 - `npm run typecheck` — type-check the source
 - `npm run build` — compile to `dist/`
 - `npm start` — run the compiled server
