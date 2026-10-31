@@ -1,8 +1,10 @@
-import 'dotenv/config'\nimport Fastify from 'fastify'
+import 'dotenv/config'
+import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { PrismaClient } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
-import { hash } from 'bcryptjs'\nimport { areDifferentAccounts, isPositiveAmount, isValidEmail } from './validation'
+import { hash } from 'bcryptjs'
+import { areDifferentAccounts, isPositiveAmount, isValidEmail } from './validation'
 
 const app = Fastify({ logger: true })
 const prisma = new PrismaClient()
@@ -14,15 +16,12 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
 
 app.register(cors, {
   origin: (origin, callback) => {
-    // Requests without an Origin header (e.g. CLI/server-to-server) are allowed.
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
     return callback(new Error('Origin not allowed'), false)
   },
 })
 
-app.get('/', async () => ({
-  message: 'Financial API Simulator is running',
-}))
+app.get('/', async () => ({ message: 'Financial API Simulator is running' }))
 
 app.post('/users', async (request, reply) => {
   const body = (request.body || {}) as Record<string, unknown>
@@ -30,7 +29,7 @@ app.post('/users', async (request, reply) => {
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   const password = typeof body.password === 'string' ? body.password : ''
 
-  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
+  if (!name || !isValidEmail(email) || password.length < 8) {
     return reply.status(400).send({
       error: 'Name, a valid email and a password with at least 8 characters are required.',
     })
@@ -39,7 +38,6 @@ app.post('/users', async (request, reply) => {
   try {
     const accountNumber = Math.floor(100000 + Math.random() * 900000).toString()
     const passwordHash = await hash(password, 12)
-
     const user = await prisma.user.create({
       data: {
         name,
@@ -55,7 +53,6 @@ app.post('/users', async (request, reply) => {
         accounts: true,
       },
     })
-
     return reply.status(201).send(user)
   } catch (error) {
     request.log.error(error)
@@ -93,16 +90,10 @@ app.post('/transactions/deposit', async (request, reply) => {
         data: { balance: { increment: amount } },
       })
       const transaction = await tx.transaction.create({
-        data: {
-          amount,
-          type: 'CREDIT',
-          description,
-          receiverAccountId: accountId,
-        },
+        data: { amount, type: 'CREDIT', description, receiverAccountId: accountId },
       })
       return { transaction, newBalance: account.balance }
     })
-
     return reply.status(201).send(result)
   } catch (error) {
     request.log.error(error)
@@ -117,13 +108,7 @@ app.post('/transactions/transfer', async (request, reply) => {
   const amountNumber = Number(body.amount)
   const description = typeof body.description === 'string' ? body.description : undefined
 
-  if (
-    !senderAccountId ||
-    !receiverAccountId ||
-    senderAccountId === receiverAccountId ||
-    !Number.isFinite(amountNumber) ||
-    amountNumber <= 0
-  ) {
+  if (!areDifferentAccounts(senderAccountId, receiverAccountId) || !isPositiveAmount(body.amount)) {
     return reply.status(400).send({
       error: 'Valid, different sender and receiver accounts and an amount greater than zero are required.',
     })
@@ -135,7 +120,7 @@ app.post('/transactions/transfer', async (request, reply) => {
       const receiver = await tx.account.findUnique({ where: { id: receiverAccountId } })
       if (!receiver) throw new Error('Receiver account was not found.')
 
-      // Conditional debit keeps the balance check and debit atomic under concurrent requests.
+      // Keep the balance check and debit in one conditional database operation.
       const debit = await tx.account.updateMany({
         where: { id: senderAccountId, balance: { gte: amount } },
         data: { balance: { decrement: amount } },
@@ -146,18 +131,10 @@ app.post('/transactions/transfer', async (request, reply) => {
         where: { id: receiverAccountId },
         data: { balance: { increment: amount } },
       })
-
       return tx.transaction.create({
-        data: {
-          amount,
-          type: 'TRANSFER',
-          description,
-          senderAccountId,
-          receiverAccountId,
-        },
+        data: { amount, type: 'TRANSFER', description, senderAccountId, receiverAccountId },
       })
     })
-
     return reply.status(201).send(result)
   } catch (error) {
     request.log.error(error)
@@ -172,9 +149,7 @@ app.get('/accounts/:id/statement', async (request, reply) => {
 
   try {
     return await prisma.transaction.findMany({
-      where: {
-        OR: [{ senderAccountId: id }, { receiverAccountId: id }],
-      },
+      where: { OR: [{ senderAccountId: id }, { receiverAccountId: id }] },
       orderBy: { createdAt: 'desc' },
       include: {
         senderAccount: { select: { user: { select: { name: true } } } },
