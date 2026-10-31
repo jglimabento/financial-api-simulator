@@ -2,7 +2,7 @@ import 'dotenv/config'\nimport Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { PrismaClient } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
-import { hash } from 'bcryptjs'
+import { hash } from 'bcryptjs'\nimport { areDifferentAccounts, isPositiveAmount, isValidEmail } from './validation'
 
 const app = Fastify({ logger: true })
 const prisma = new PrismaClient()
@@ -81,7 +81,7 @@ app.post('/transactions/deposit', async (request, reply) => {
   const amountNumber = Number(body.amount)
   const description = typeof body.description === 'string' ? body.description : undefined
 
-  if (!accountId || !Number.isFinite(amountNumber) || amountNumber <= 0) {
+  if (!accountId || !isPositiveAmount(body.amount)) {
     return reply.status(400).send({ error: 'A valid accountId and an amount greater than zero are required.' })
   }
 
